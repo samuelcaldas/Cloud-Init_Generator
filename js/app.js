@@ -1,0 +1,141 @@
+$(document).ready(function() {
+    // IP Configuration Type Toggle
+    $('#ipConfigType').on('change', function() {
+        $('.ip-config-section').addClass('d-none');
+        
+        const selectedType = $(this).val();
+        if (selectedType === 'static') {
+            $('#staticIpConfig').removeClass('d-none');
+        } else if (selectedType === 'pattern') {
+            $('#patternIpConfig').removeClass('d-none');
+        }
+    });
+    
+    // IPv6 Toggle
+    $('#enableIpv6').on('change', function() {
+        if ($(this).is(':checked')) {
+            $('#ipv6Config').removeClass('d-none');
+        } else {
+            $('#ipv6Config').addClass('d-none');
+        }
+    });
+    
+    // IPv6 Type Toggle
+    $('input[name="ipv6Type"]').on('change', function() {
+        if ($('#ipv6Static').is(':checked')) {
+            $('#staticIpv6Config').removeClass('d-none');
+        } else {
+            $('#staticIpv6Config').addClass('d-none');
+        }
+    });
+    
+    // Password Toggle
+    $('#togglePassword').on('click', function() {
+        const passwordInput = $('#password');
+        const icon = $(this).find('i');
+        
+        if (passwordInput.attr('type') === 'password') {
+            passwordInput.attr('type', 'text');
+            icon.removeClass('bi-eye').addClass('bi-eye-slash');
+        } else {
+            passwordInput.attr('type', 'password');
+            icon.removeClass('bi-eye-slash').addClass('bi-eye');
+        }
+    });
+    
+    // SSH Key File Upload
+    $('#loadSshKey').on('click', function() {
+        const fileInput = $('#sshKeyFile')[0];
+        
+        if (fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                $('#sshKey').val(e.target.result);
+            };
+            
+            reader.readAsText(file);
+        } else {
+            alert('Please select a file first.');
+        }
+    });
+    
+    // Generate Configuration Button
+    $('#generateBtn').on('click', function() {
+        const yamlConfig = generateYamlConfig();
+        $('#yamlOutput').text(yamlConfig);
+        
+        // Update preview
+        const previewHtml = formatPreview(yamlConfig);
+        $('#previewOutput').html(previewHtml);
+    });
+    
+    // Download YAML Button
+    $('#downloadYamlBtn').on('click', function() {
+        const yamlConfig = $('#yamlOutput').text();
+        downloadFile('cloud-init.yaml', yamlConfig);
+    });
+    
+    // Download ISO Button
+    $('#downloadIsoBtn').on('click', function() {
+        const yamlConfig = $('#yamlOutput').text();
+        generateAndDownloadIso(yamlConfig);
+    });
+    
+    // Helper function for downloading files
+    function downloadFile(filename, content) {
+        const element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
+        element.setAttribute('download', filename);
+        element.style.display = 'none';
+        document.body.appendChild(element);
+        element.click();
+        document.body.removeChild(element);
+    }
+    
+    // Format preview from YAML
+    function formatPreview(yaml) {
+        // Simple formatting of YAML to HTML
+        // In a real application, you would parse the YAML and format it nicely
+        let html = '<h5>Configuration Preview</h5>';
+        
+        try {
+            // Split by lines and process
+            const lines = yaml.split('\n');
+            let inList = false;
+            let listHtml = '';
+            
+            for (let line of lines) {
+                if (line.trim() === '') continue;
+                
+                // Remove comment markers
+                if (line.trim().startsWith('#')) {
+                    line = line.replace(/^#\s*/, '');
+                    html += `<div class="text-muted mb-2">${line}</div>`;
+                    continue;
+                }
+                
+                // Check if line contains a colon (key-value pair)
+                if (line.includes(':')) {
+                    const parts = line.split(':');
+                    const key = parts[0].trim();
+                    const value = parts.slice(1).join(':').trim();
+                    
+                    if (value) {
+                        html += `<div class="mb-2"><strong>${key}:</strong> ${value}</div>`;
+                    } else {
+                        html += `<div class="mb-2"><strong>${key}:</strong></div>`;
+                    }
+                } else {
+                    // It's probably a list item or continuation
+                    html += `<div class="ps-4 mb-1">${line}</div>`;
+                }
+            }
+            
+            return html;
+        } catch (e) {
+            return `<div class="alert alert-warning">Error parsing configuration: ${e.message}</div>`;
+        }
+    }
+});

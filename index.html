@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud-Init Generator</title>
+    <meta name="description" content="Generate cloud-init YAML or ISO files for your cloud instances">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.3/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <header class="mb-5">
+            <h1 class="text-center">Cloud-Init Generator</h1>
+            <p class="text-center lead">Generate cloud-init YAML or ISO files for your cloud instances</p>
+        </header>
+
+        <div class="row">
+            <div class="col-md-8">
+                <ul class="nav nav-tabs" id="configTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="basic-tab" data-bs-toggle="tab" data-bs-target="#basic" 
+                            type="button" role="tab" aria-controls="basic" aria-selected="true">Basic Configuration</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="advanced-tab" data-bs-toggle="tab" data-bs-target="#advanced" 
+                            type="button" role="tab" aria-controls="advanced" aria-selected="false">Advanced Configuration</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content border border-top-0 rounded-bottom p-4" id="configTabsContent">
+                    <!-- Basic Configuration Tab -->
+                    <div class="tab-pane fade show active" id="basic" role="tabpanel" aria-labelledby="basic-tab">
+                        <form id="basicConfigForm">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="username" name="username" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="password" name="password" required>
+                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="domain" class="form-label">Domain</label>
+                                <input type="text" class="form-control" id="domain" name="domain">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="dns" class="form-label">DNS Servers (comma-separated)</label>
+                                <input type="text" class="form-control" id="dns" name="dns" placeholder="8.8.8.8, 1.1.1.1">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">SSH Public Key</label>
+                                <div class="input-group mb-2">
+                                    <input type="file" class="form-control" id="sshKeyFile" accept=".pub">
+                                    <button class="btn btn-outline-secondary" type="button" id="loadSshKey">Load</button>
+                                </div>
+                                <textarea class="form-control" id="sshKey" name="sshKey" rows="3" 
+                                    placeholder="Paste your SSH public key here or load from a file"></textarea>
+                            </div>
+                            
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="upgradePackages" name="upgradePackages">
+                                <label class="form-check-label" for="upgradePackages">Enable package upgrades</label>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">IP Configuration for net0</label>
+                                <div class="mb-2">
+                                    <select class="form-select" id="ipConfigType">
+                                        <option value="dhcp">DHCP</option>
+                                        <option value="static">Static IP</option>
+                                        <option value="pattern">Pattern-based IP</option>
+                                    </select>
+                                </div>
+                                
+                                <div id="staticIpConfig" class="ip-config-section d-none">
+                                    <div class="row mb-2">
+                                        <div class="col">
+                                            <input type="text" class="form-control" id="ipAddress" 
+                                                placeholder="IP Address (e.g., 192.168.1.100)">
+                                        </div>
+                                        <div class="col">
+                                            <input type="text" class="form-control" id="subnetMask" 
+                                                placeholder="Subnet Mask (e.g., 255.255.255.0 or /24)">
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <input type="text" class="form-control" id="gateway" 
+                                            placeholder="Gateway (e.g., 192.168.1.1)">
+                                    </div>
+                                </div>
+                                
+                                <div id="patternIpConfig" class="ip-config-section d-none">
+                                    <div class="row mb-2">
+                                        <div class="col">
+                                            <input type="text" class="form-control" id="ipPattern" 
+                                                placeholder="IP Pattern (e.g., 192.168.1.)">
+                                        </div>
+                                        <div class="col">
+                                            <input type="text" class="form-control" id="vmId" 
+                                                placeholder="VM ID (last 3 digits will be used)">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" id="enableIpv6">
+                                    <label class="form-check-label" for="enableIpv6">
+                                        Enable IPv6
+                                    </label>
+                                </div>
+                                
+                                <div id="ipv6Config" class="mt-2 d-none">
+                                    <div class="mb-2 form-check">
+                                        <input class="form-check-input" type="radio" name="ipv6Type" id="ipv6Slaac" value="slaac" checked>
+                                        <label class="form-check-label" for="ipv6Slaac">
+                                            SLAAC (Stateless Address Autoconfiguration)
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="ipv6Type" id="ipv6Static" value="static">
+                                        <label class="form-check-label" for="ipv6Static">
+                                            Static IPv6
+                                        </label>
+                                    </div>
+                                    <div id="staticIpv6Config" class="mt-2 d-none">
+                                        <input type="text" class="form-control mb-2" id="ipv6Address" placeholder="IPv6 Address">
+                                        <input type="text" class="form-control mb-2" id="ipv6Gateway" placeholder="IPv6 Gateway">
+                                        <input type="text" class="form-control" id="ipv6PrefixLength" placeholder="Prefix Length (e.g., 64)">
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Advanced Configuration Tab -->
+                    <div class="tab-pane fade" id="advanced" role="tabpanel" aria-labelledby="advanced-tab">
+                        <form id="advancedConfigForm">
+                            <div class="mb-3">
+                                <label for="machineName" class="form-label">Machine Name</label>
+                                <input type="text" class="form-control" id="machineName" name="machineName">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="timezone" class="form-label">Timezone</label>
+                                <select class="form-select" id="timezone" name="timezone">
+                                    <option value="UTC">UTC</option>
+                                    <option value="America/New_York">America/New_York</option>
+                                    <option value="America/Chicago">America/Chicago</option>
+                                    <option value="America/Denver">America/Denver</option>
+                                    <option value="America/Los_Angeles">America/Los_Angeles</option>
+                                    <option value="Europe/London">Europe/London</option>
+                                    <option value="Europe/Berlin">Europe/Berlin</option>
+                                    <option value="Asia/Tokyo">Asia/Tokyo</option>
+                                    <option value="Asia/Shanghai">Asia/Shanghai</option>
+                                    <option value="Australia/Sydney">Australia/Sydney</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="locale" class="form-label">Locale</label>
+                                <select class="form-control" id="locale" name="locale">
+                                    <option value="en_US.UTF-8">English (US)</option>
+                                    <option value="en_GB.UTF-8">English (UK)</option>
+                                    <option value="es_ES.UTF-8">Spanish</option>
+                                    <option value="fr_FR.UTF-8">French</option>
+                                    <option value="de_DE.UTF-8">German</option>
+                                    <option value="it_IT.UTF-8">Italian</option>
+                                    <option value="pt_BR.UTF-8">Portuguese (Brazil)</option>
+                                    <option value="ru_RU.UTF-8">Russian</option>
+                                    <option value="ja_JP.UTF-8">Japanese</option>
+                                    <option value="zh_CN.UTF-8">Chinese (Simplified)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="packages" class="form-label">Packages to Install (one per line)</label>
+                                <textarea class="form-control" id="packages" name="packages" rows="4" 
+                                    placeholder="Enter package names, one per line"></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="runCmd" class="form-label">Run Commands</label>
+                                <textarea class="form-control" id="runCmd" name="runCmd" rows="6" 
+                                    placeholder="Enter commands to run during installation"></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="bootCmd" class="form-label">Boot Commands</label>
+                                <textarea class="form-control" id="bootCmd" name="bootCmd" rows="4" 
+                                    placeholder="Enter commands to run on every boot"></textarea>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card sticky-top" style="top: 20px">
+                    <div class="card-header">
+                        <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="yaml-tab" data-bs-toggle="tab" data-bs-target="#yaml-content" 
+                                    type="button" role="tab" aria-controls="yaml-content" aria-selected="true">YAML</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="preview-tab" data-bs-toggle="tab" data-bs-target="#preview-content" 
+                                    type="button" role="tab" aria-controls="preview-content" aria-selected="false">Preview</button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="yaml-content" role="tabpanel" aria-labelledby="yaml-tab">
+                                <pre id="yamlOutput" class="mb-0 yaml-output"><code>#cloud-config
+# Your configuration will appear here</code></pre>
+                            </div>
+                            <div class="tab-pane fade" id="preview-content" role="tabpanel" aria-labelledby="preview-tab">
+                                <div id="previewOutput" class="preview-output">
+                                    <p>Your configuration will be displayed here in a readable format.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-grid gap-2">
+                            <button type="button" id="generateBtn" class="btn btn-primary">
+                                <i class="bi bi-gear"></i> Generate Config
+                            </button>
+                            <div class="btn-group" role="group">
+                                <button type="button" id="downloadYamlBtn" class="btn btn-secondary">
+                                    <i class="bi bi-file-earmark-code"></i> Download YAML
+                                </button>
+                                <button type="button" id="downloadIsoBtn" class="btn btn-secondary">
+                                    <i class="bi bi-disc"></i> Download ISO
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="mt-5 text-center text-muted">
+            <p>Cloud-Init Generator - Build with HTML, Bootstrap, jQuery</p>
+            <p><small>This is a client-side application. Your configuration data never leaves your browser.</small></p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.3/jquery-ui.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/yaml-generator.js"></script>
+    <script src="js/iso-generator.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/pwa.js"></script>
+</body>
+</html>
