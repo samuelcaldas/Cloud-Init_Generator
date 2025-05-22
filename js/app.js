@@ -1,4 +1,35 @@
 $(document).ready(function() {
+    // Initialize state
+    let configUpdateTimeout = null;
+    const DEBOUNCE_DELAY = 500; // ms
+
+    // Function to trigger config update with debounce
+    function triggerConfigUpdate() {
+        // Clear any pending timeout
+        if (configUpdateTimeout) {
+            clearTimeout(configUpdateTimeout);
+        }
+        
+        // Set new timeout for debounce
+        configUpdateTimeout = setTimeout(() => {
+            const yamlConfig = generateYamlConfig();
+            $('#yamlOutput').text(yamlConfig);
+            
+            // Update preview
+            const previewHtml = formatPreview(yamlConfig);
+            $('#previewOutput').html(previewHtml);
+        }, DEBOUNCE_DELAY);
+    }
+
+    // Attach change event handlers to all form inputs
+    $('#basicConfigForm input, #basicConfigForm select, #basicConfigForm textarea').on('input change', function() {
+        triggerConfigUpdate();
+    });
+    
+    $('#advancedConfigForm input, #advancedConfigForm select, #advancedConfigForm textarea').on('input change', function() {
+        triggerConfigUpdate();
+    });
+    
     // IP Configuration Type Toggle
     $('#ipConfigType').on('change', function() {
         $('.ip-config-section').addClass('d-none');
@@ -9,6 +40,8 @@ $(document).ready(function() {
         } else if (selectedType === 'pattern') {
             $('#patternIpConfig').removeClass('d-none');
         }
+        
+        triggerConfigUpdate();
     });
     
     // IPv6 Toggle
@@ -18,6 +51,8 @@ $(document).ready(function() {
         } else {
             $('#ipv6Config').addClass('d-none');
         }
+        
+        triggerConfigUpdate();
     });
     
     // IPv6 Type Toggle
@@ -27,6 +62,8 @@ $(document).ready(function() {
         } else {
             $('#staticIpv6Config').addClass('d-none');
         }
+        
+        triggerConfigUpdate();
     });
     
     // Password Toggle
@@ -53,6 +90,7 @@ $(document).ready(function() {
             
             reader.onload = function(e) {
                 $('#sshKey').val(e.target.result);
+                triggerConfigUpdate();
             };
             
             reader.readAsText(file);
@@ -61,8 +99,18 @@ $(document).ready(function() {
         }
     });
     
-    // Generate Configuration Button
+    // Tab change event to update config when switching tabs
+    $('#configTabs button').on('shown.bs.tab', function (e) {
+        triggerConfigUpdate();
+    });
+    
+    // Generate Configuration Button (kept for explicit updates)
     $('#generateBtn').on('click', function() {
+        // Clear any pending timeout to ensure immediate update
+        if (configUpdateTimeout) {
+            clearTimeout(configUpdateTimeout);
+        }
+        
         const yamlConfig = generateYamlConfig();
         $('#yamlOutput').text(yamlConfig);
         
@@ -138,4 +186,7 @@ $(document).ready(function() {
             return `<div class="alert alert-warning">Error parsing configuration: ${e.message}</div>`;
         }
     }
+    
+    // Initialize the configuration on page load
+    triggerConfigUpdate();
 });
