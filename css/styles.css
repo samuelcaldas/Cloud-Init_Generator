@@ -49,6 +49,16 @@ body {
     padding: 0.5rem;
 }
 
+/* Component dropdown styling */
+#componentDropdown {
+    min-width: 200px;
+}
+
+/* Deprecated button styling */
+.btn-outline-secondary[data-bs-toggle="tooltip"] {
+    border-style: dashed;
+}
+
 /* Hide spinners for number inputs */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {

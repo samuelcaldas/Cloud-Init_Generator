@@ -125,10 +125,37 @@ $(document).ready(function() {
         downloadFile('cloud-init.yaml', yamlConfig);
     });
     
-    // Download ISO Button
+    // Download Components Button (replaces ISO button)
+    $('#downloadComponentsBtn').on('click', function() {
+        // Show dropdown menu for component selection
+        $('#componentDropdown').toggleClass('show');
+    });
+    
+    // Individual component download handlers
+    $('#downloadUserData').on('click', function() {
+        downloadComponent('user');
+    });
+    
+    $('#downloadMetaData').on('click', function() {
+        downloadComponent('meta');
+    });
+    
+    $('#downloadNetworkConfig').on('click', function() {
+        downloadComponent('network');
+    });
+    
+    $('#downloadVendorData').on('click', function() {
+        downloadComponent('vendor');
+    });
+    
+    // Download All Components
+    $('#downloadAllComponents').on('click', function() {
+        downloadAllComponents();
+    });
+    
+    // Legacy ISO Button (now shows information)
     $('#downloadIsoBtn').on('click', function() {
-        const yamlConfig = $('#yamlOutput').text();
-        generateAndDownloadIso(yamlConfig);
+        showCloudInitInfo();
     });
     
     // Helper function for downloading files
@@ -189,4 +216,8 @@ $(document).ready(function() {
     
     // Initialize the configuration on page load
     triggerConfigUpdate();
+    
+    // Initialize tooltips
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
 });

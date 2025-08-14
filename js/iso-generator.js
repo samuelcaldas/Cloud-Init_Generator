@@ -1,36 +1,28 @@
 /**
- * Generates and downloads an ISO file based on a YAML configuration
- * @param {string} yamlConfig - The cloud-init YAML configuration
+ * Displays information about cloud-init components and download options
+ * @deprecated ISO generation is deprecated, use component downloads instead
  */
-function generateAndDownloadIso(yamlConfig) {
-    // In a real-world application, generating an ISO would typically be done server-side
-    // For this client-side only application, we'll implement a simple approach
-    
-    // Create a metadata file that cloud-init expects
-    const metadata = JSON.stringify({
-        'instance-id': 'cloud-init-' + Date.now(),
-        'local-hostname': $('#machineName').val() || $('#username').val() + '-host'
-    });
-    
-    // Create a dummy ISO (in reality, this would require server-side processing)
-    alert('ISO generation requires server-side processing. In a real application, this would create an ISO file with your configuration.');
-    
-    // For demonstration purposes, we'll just download the yaml file for now
-    downloadFile('cloud-init-config.yaml', yamlConfig);
-    
-    // Additional information for the user about manual ISO creation
+function showCloudInitInfo() {
+    // Create an information element to explain the new download options
     const infoEl = document.createElement('div');
     infoEl.innerHTML = `
         <div class="alert alert-info alert-dismissible fade show mt-3" role="alert">
-            <h5>How to manually create a cloud-init ISO</h5>
-            <p>To create a cloud-init ISO with your configuration, follow these steps:</p>
+            <h5>Cloud-Init Component Downloads</h5>
+            <p>ISO generation is deprecated. Instead, you can now download individual cloud-init components:</p>
+            <ul>
+                <li><strong>user-data</strong>: Contains user configuration, packages, and commands</li>
+                <li><strong>meta-data</strong>: Contains instance metadata like hostname and instance ID</li>
+                <li><strong>network-config</strong>: Contains network configuration</li>
+                <li><strong>vendor-data</strong>: Contains vendor-specific configuration</li>
+            </ul>
+            <p>For Proxmox users:</p>
             <ol>
-                <li>Save the YAML as <code>user-data</code> (no file extension)</li>
-                <li>Create a file named <code>meta-data</code> with the following content:</li>
-                <pre>${metadata}</pre>
-                <li>Run the following command to create the ISO:</li>
-                <pre>genisoimage -output cloud-init.iso -volid cidata -joliet -rock user-data meta-data</pre>
+                <li>Download the individual components or use the "Download All Components" option</li>
+                <li>Upload the files to your Proxmox server</li>
+                <li>Use the files with the Proxmox cloud-init drive</li>
             </ol>
+            <p>For manual ISO creation (if needed):</p>
+            <pre>genisoimage -output cloud-init.iso -volid cidata -joliet -rock user-data meta-data network-config vendor-data</pre>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     `;
