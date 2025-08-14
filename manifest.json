@@ -1,7 +1,7 @@
 {
     "name": "Cloud-Init Generator",
     "short_name": "Cloud-Init",
-    "description": "Generate cloud-init YAML or ISO files for your cloud instances",
+    "description": "Generate cloud-init YAML files for your cloud instances",
     "start_url": "/index.html",
     "display": "standalone",
     "background_color": "#ffffff",

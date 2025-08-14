@@ -140,8 +140,6 @@ $(document).ready(function() {
         downloadAllComponents();
     });
     
-    // Removed ISO Button handler
-    
     // Helper function for downloading files
     function downloadFile(filename, content) {
         const element = document.createElement('a');
