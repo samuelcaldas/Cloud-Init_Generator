@@ -1,3 +1,32 @@
+/**
+ * Helper function for downloading files with YAML format
+ * @param {string} filename - The name of the file to download
+ * @param {string} content - The content to be downloaded
+ * @returns {boolean} - Success status of the download operation
+ */
+function downloadFile(filename, content) {
+    try {
+        // Ensure filename has .yaml extension
+        if (!filename.endsWith('.yaml')) {
+            filename += '.yaml';
+        }
+        
+        const element = document.createElement('a');
+        element.setAttribute('href', 'data:application/x-yaml;charset=utf-8,' + encodeURIComponent(content));
+        element.setAttribute('download', filename);
+        element.style.display = 'none';
+        document.body.appendChild(element);
+        element.click();
+        document.body.removeChild(element);
+        
+        return true;
+    } catch (error) {
+        console.error('Download failed:', error);
+        alert('Failed to download file: ' + error.message);
+        return false;
+    }
+}
+
 $(document).ready(function() {
     // Initialize state
     let configUpdateTimeout = null;
@@ -109,8 +138,16 @@ $(document).ready(function() {
     
     // Download YAML Button
     $('#downloadYamlBtn').on('click', function() {
-        const yamlConfig = $('#yamlOutput').text();
-        downloadFile('cloud-init.yaml', yamlConfig);
+        try {
+            const yamlConfig = $('#yamlOutput').text();
+            if (!yamlConfig || yamlConfig.trim() === '') {
+                throw new Error('No configuration generated');
+            }
+            downloadFile('cloud-init.yaml', yamlConfig);
+        } catch (error) {
+            console.error('Error downloading YAML:', error);
+            alert('Failed to download YAML: ' + error.message);
+        }
     });
     
     // Download Components Button
@@ -140,16 +177,7 @@ $(document).ready(function() {
         downloadAllComponents();
     });
     
-    // Helper function for downloading files
-    function downloadFile(filename, content) {
-        const element = document.createElement('a');
-        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
-        element.setAttribute('download', filename);
-        element.style.display = 'none';
-        document.body.appendChild(element);
-        element.click();
-        document.body.removeChild(element);
-    }
+    // The downloadFile function has been moved to global scope
     
     // Format preview from YAML
     function formatPreview(yaml) {

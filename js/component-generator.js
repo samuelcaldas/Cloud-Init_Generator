@@ -17,11 +17,11 @@ function generateUserData() {
  */
 function generateMetaData() {
     const machineName = $('#machineName').val() || $('#username').val() + '-host';
-    
+
     let metadata = '';
     metadata += 'instance-id: cloud-init-' + Date.now() + '\n';
     metadata += 'local-hostname: ' + machineName + '\n';
-    
+
     return metadata;
 }
 
@@ -33,29 +33,29 @@ function generateNetworkConfig() {
     let networkConfig = 'version: 2\n';
     networkConfig += 'ethernets:\n';
     networkConfig += '  eth0:\n';
-    
+
     const ipConfigType = $('#ipConfigType').val();
-    
+
     if (ipConfigType === 'dhcp') {
         networkConfig += '    dhcp4: true\n';
     } else if (ipConfigType === 'static') {
         const ipAddress = $('#ipAddress').val();
         const subnetMask = $('#subnetMask').val();
         const gateway = $('#gateway').val();
-        
+
         if (ipAddress && subnetMask) {
             networkConfig += '    dhcp4: false\n';
-            
+
             // Handle different formats of subnet mask
             let cidr = subnetMask;
             if (subnetMask.includes('.')) {
                 // Convert subnet mask to CIDR
                 cidr = '/24'; // Default, would need proper conversion
             }
-            
+
             networkConfig += '    addresses:\n';
             networkConfig += `      - ${ipAddress}${cidr}\n`;
-            
+
             if (gateway) {
                 networkConfig += '    routes:\n';
                 networkConfig += '      - to: default\n';
@@ -65,22 +65,22 @@ function generateNetworkConfig() {
     } else if (ipConfigType === 'pattern') {
         const ipPattern = $('#ipPattern').val();
         const vmId = $('#vmId').val();
-        
+
         if (ipPattern && vmId) {
             const lastThreeDigits = vmId.slice(-3);
             const ipAddress = `${ipPattern}${lastThreeDigits}`;
-            
+
             networkConfig += '    dhcp4: false\n';
             networkConfig += '    addresses:\n';
             networkConfig += `      - ${ipAddress}/24\n`; // Assuming /24 subnet
         }
     }
-    
+
     // IPv6 configuration
     const enableIpv6 = $('#enableIpv6').is(':checked');
     if (enableIpv6) {
         const ipv6Type = $('input[name="ipv6Type"]:checked').val();
-        
+
         if (ipv6Type === 'slaac') {
             networkConfig += '    dhcp6: false\n';
             networkConfig += '    accept-ra: true\n';
@@ -88,13 +88,13 @@ function generateNetworkConfig() {
             const ipv6Address = $('#ipv6Address').val();
             const ipv6Gateway = $('#ipv6Gateway').val();
             const ipv6PrefixLength = $('#ipv6PrefixLength').val() || '64';
-            
+
             if (ipv6Address) {
                 networkConfig += '    dhcp6: false\n';
                 networkConfig += '    accept-ra: false\n';
                 networkConfig += '    addresses:\n';
                 networkConfig += `      - ${ipv6Address}/${ipv6PrefixLength}\n`;
-                
+
                 if (ipv6Gateway) {
                     networkConfig += '    routes:\n';
                     networkConfig += '      - to: ::/0\n';
@@ -103,7 +103,7 @@ function generateNetworkConfig() {
             }
         }
     }
-    
+
     return networkConfig;
 }
 
@@ -120,47 +120,59 @@ function generateVendorData() {
 /**
  * Downloads a specific cloud-init component
  * @param {string} componentType - The type of component to download (user, meta, network, vendor)
+ * @returns {boolean} - Success status of the download operation
  */
 function downloadComponent(componentType) {
     let content = '';
     let filename = '';
-    
-    switch(componentType) {
-        case 'user':
-            content = generateUserData();
-            filename = 'user-data';
-            break;
-        case 'meta':
-            content = generateMetaData();
-            filename = 'meta-data';
-            break;
-        case 'network':
-            content = generateNetworkConfig();
-            filename = 'network-config';
-            break;
-        case 'vendor':
-            content = generateVendorData();
-            filename = 'vendor-data';
-            break;
-        default:
-            alert('Invalid component type');
-            return;
+
+    try {
+        switch (componentType) {
+            case 'user':
+                content = generateUserData();
+                filename = 'user-data';
+                break;
+            case 'meta':
+                content = generateMetaData();
+                filename = 'meta-data';
+                break;
+            case 'network':
+                content = generateNetworkConfig();
+                filename = 'network-config';
+                break;
+            case 'vendor':
+                content = generateVendorData();
+                filename = 'vendor-data';
+                break;
+            default:
+                throw new Error('Invalid component type: ' + componentType);
+        }
+
+        if (!content) {
+            throw new Error('Failed to generate content for ' + componentType);
+        }
+
+        return downloadFile(filename, content);
+    } catch (error) {
+        console.error(`Error downloading ${componentType} component:`, error);
+        alert(`Failed to download ${componentType} component: ${error.message}`);
+        return false;
     }
-    
-    downloadFile(filename, content);
 }
 
 /**
- * Downloads all cloud-init components as a zip file
+ * Downloads all cloud-init components
+ * @returns {boolean} - Success status of the download operation
  */
 function downloadAllComponents() {
-    // In a real implementation, this would create a zip file with all components
-    // For this client-side only application, we'll download each file separately
-    
-    alert('Downloading all components separately. In a real application, this would create a zip file.');
-    
-    downloadComponent('user');
-    downloadComponent('meta');
-    downloadComponent('network');
-    downloadComponent('vendor');
+    try {
+        downloadComponent('user');
+        downloadComponent('meta');
+        downloadComponent('network');
+        downloadComponent('vendor');
+    } catch (error) {
+        console.error('Error downloading all components:', error);
+        alert('Failed to download all components: ' + error.message);
+        return false;
+    }
 }
