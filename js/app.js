@@ -104,20 +104,8 @@ $(document).ready(function() {
         triggerConfigUpdate();
     });
     
-    // Generate Configuration Button (kept for explicit updates)
-    $('#generateBtn').on('click', function() {
-        // Clear any pending timeout to ensure immediate update
-        if (configUpdateTimeout) {
-            clearTimeout(configUpdateTimeout);
-        }
-        
-        const yamlConfig = generateYamlConfig();
-        $('#yamlOutput').text(yamlConfig);
-        
-        // Update preview
-        const previewHtml = formatPreview(yamlConfig);
-        $('#previewOutput').html(previewHtml);
-    });
+    // Generate Configuration Button removed as it was redundant
+    // Configuration is automatically updated when form inputs change
     
     // Download YAML Button
     $('#downloadYamlBtn').on('click', function() {
@@ -125,10 +113,9 @@ $(document).ready(function() {
         downloadFile('cloud-init.yaml', yamlConfig);
     });
     
-    // Download Components Button (replaces ISO button)
-    $('#downloadComponentsBtn').on('click', function() {
-        // Show dropdown menu for component selection
-        $('#componentDropdown').toggleClass('show');
+    // Download Components Button
+    $('#downloadComponentsBtn').on('click', function(e) {
+        e.stopPropagation();
     });
     
     // Individual component download handlers
@@ -153,10 +140,7 @@ $(document).ready(function() {
         downloadAllComponents();
     });
     
-    // Legacy ISO Button (now shows information)
-    $('#downloadIsoBtn').on('click', function() {
-        showCloudInitInfo();
-    });
+    // Removed ISO Button handler
     
     // Helper function for downloading files
     function downloadFile(filename, content) {
@@ -217,7 +201,11 @@ $(document).ready(function() {
     // Initialize the configuration on page load
     triggerConfigUpdate();
     
-    // Initialize tooltips
+    // Initialize tooltips and dropdowns
     const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
     const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+    
+    // Ensure dropdowns work correctly
+    const dropdownElementList = document.querySelectorAll('.dropdown-toggle');
+    const dropdownList = [...dropdownElementList].map(dropdownToggleEl => new bootstrap.Dropdown(dropdownToggleEl));
 });
